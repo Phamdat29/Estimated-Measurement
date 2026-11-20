@@ -171,7 +171,7 @@ const MODES=[
   pad.onpointerdown=()=>{const n=now();if(n<P.t0+3.5*P.I||done||taps.length>=8)return;taps.push(n);sp[3+taps.length].classList.add('on');beep(660,.04,.1);if(taps.length==8){done=1;pad.disabled=1;sub(taps.slice())}};
   T(P.t0+13*P.I+600-now(),()=>{if(!done){done=1;pad.disabled=1;sub(taps.slice())}})},
  err(v,P){let s=0;for(let k=0;k<8;k++)s+=k<v.length?Math.min(600,Math.abs(v[k]-(P.t0+(4+k)*P.I))):600;return s},
- fmt:v=>v.length+' nhịp',fe:e=>Math.round(e)+' ms',ans:P=>P.bpm+' BPM'},
+ fmt:v=>v.length>1?Math.round(60000*(v.length-1)/(v[v.length-1]-v[0]))+' BPM':v.length+' nhịp',fe:e=>Math.round(e/8)+' ms/nhịp',ans:P=>P.bpm+' BPM'},
 {id:'btn',n:'Toán Và Nút',en:'Buttons',
  gen(){for(;;){const o=['+','−','×'][RI(0,2)];let a,b,r;if(o=='+'){a=RI(1,15);b=RI(1,19);r=a+b}else if(o=='−'){a=RI(2,20);b=RI(1,a-1);r=a-b}else{a=RI(2,10);b=RI(2,10);r=a*b}
   if(r>=1&&r<=20)return{r,q:`${a} ${o} ${b} = ?`,h:'bấm đúng số lần · 5 giây'}}},
@@ -278,17 +278,18 @@ function reel(p,idx){const N=MODES.length;
   if(k>=1){wh.classList.add('done');its[3].classList.add('win');en.textContent=MODES[idx].en.toUpperCase();en.classList.add('pop');if(snd(p))beep(900,.12,.15);return false}})}
 const LV=['Siêu dễ','Rất dễ','Dễ','Hơi dễ','Vừa','Hơi khó','Khó','Rất khó','Cao thủ','Bậc thầy'];
 const ps=()=>solo?[P2[1]]:P2,NZ=()=>Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*Math.PI*Math.random());
-function botPlay(m,P){const k=2.2*Math.pow(.15/2.2,(G.lv-1)/9),z=s=>NZ()*s*k,th=()=>R(2500,6500)*(1.7-G.lv*.1),go=(ms,v)=>T(Math.max(0,ms),()=>submit(0,v)),cl=(v,a,b)=>Math.min(b,Math.max(a,v));
+const MUL=[3.2,2.5,2,1.6,1.3,1.05,.85,.68,.52,.4];
+function botPlay(m,P){const k=MUL[G.lv-1],z=s=>NZ()*s*k,th=()=>R(2500,6500)*(1.7-G.lv*.1),go=(ms,v)=>T(Math.max(0,ms),()=>submit(0,v)),cl=(v,a,b)=>Math.min(b,Math.max(a,v));
  switch(m.id){
- case'angle':go(th(),Math.round(cl(P.t+z(8),1,359)*10)/10);break;
- case'dots':go(6200+th(),Math.max(0,Math.round(P.n+z(Math.max(1.2,P.n*.12)))));break;
- case'throw':go(900+P.tv/.6*1000+th()*.5,Math.round(cl(P.xl+z(45),0,1000)));break;
- case'beat':go(P.t0+11*P.I+200-performance.now(),Array.from({length:8},(_,j)=>P.t0+(4+j)*P.I+z(45)));break;
- case'btn':{const n=Math.max(0,Math.round(P.r+z(1.1)));Array.from({length:n},()=>R(3100,7900)).forEach(t=>T(t,()=>P.flash&&P.flash()));go(8000,n);break}
- case'pump':go(2000+th(),Math.round(cl(P.Tg+z(.07*P.V),0,P.V)*10)/10);break;
- case'stop':{const v=Math.max(.3,P.tg+z(.2));go(900+v*1000,v);break}
- case'catch':{const v=Math.max(.3,P.th+z(.1));go(900+v*1000,v);break}
- case'mid':go(1000+th()*.7,Math.round(cl(P.tx+z(.05*P.len),P.x1,P.x1+P.len)))}}
+ case'angle':go(th(),Math.round(cl(P.t+z(12),1,359)*10)/10);break;
+ case'dots':go(6200+th(),Math.max(0,Math.round(P.n+z(Math.max(1.5,P.n*.15)))));break;
+ case'throw':go(900+P.tv/.6*1000+th()*.5,Math.round(cl(P.xl+z(80),0,1000)));break;
+ case'beat':{const iv=P.I*(1+z(.025)),bs=Math.abs(z(60));go(P.t0+11*P.I+200-performance.now(),Array.from({length:8},(_,j)=>P.t0+4*P.I+j*iv+bs+z(50)));break}
+ case'btn':{const n=Math.max(0,Math.round(P.r+z(1.8)));Array.from({length:n},()=>R(3100,7900)).forEach(t=>T(t,()=>P.flash&&P.flash()));go(8000,n);break}
+ case'pump':go(2000+th(),Math.round(cl(P.Tg+z(.1*P.V),0,P.V)*10)/10);break;
+ case'stop':{const v=Math.max(.3,P.tg+z(.065*P.tg));go(900+v*1000,v);break}
+ case'catch':{const v=Math.max(.3,P.th+z(.06*P.th));go(900+v*1000,v);break}
+ case'mid':go(1000+th()*.7,Math.round(cl(P.tx+z(.06*P.len),P.x1,P.x1+P.len)))}}
 function nextRound(){clearRd();const m=pick(),idx=MODES.indexOf(m);rd={m,ans:[null,null],rdy:solo?[1,0]:[0,0],btns:[],tm:[],iv:[],dead:false};
  P2.forEach(p=>p.rv=null);ps().forEach(p=>{p.setQ('');reel(p,idx)});
  T(5700,()=>{rd.P=m.gen();ps().forEach(p=>{p.setQ(rd.P.q,rd.P.h);p.bd.innerHTML='';m.ui(p,rd.P,v=>submit(p.i,v))});if(solo)botPlay(m,rd.P)})}
